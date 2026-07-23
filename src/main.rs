@@ -64,12 +64,12 @@ async fn main() -> std::io::Result<()> {
     // Scraping inicial "best effort": si el BCV no responde al arrancar, la
     // API igual queda operativa (los endpoints de lectura simplemente
     // devolverán 404 hasta el próximo scraping exitoso).
-    match exchange_rate_service.scrape_and_save().await {
+    /* match exchange_rate_service.scrape_and_save().await {
         Ok(_) => log::info!("scraping inicial del BCV completado"),
         Err(err) => {
             log::warn!("scraping inicial del BCV falló (se reintentará más adelante): {err}")
         }
-    }
+    } */
 
     if let Some(interval_secs) = config.bcv_scrape_interval_secs {
         scheduler::spawn_periodic_scrape(exchange_rate_service.clone(), interval_secs);

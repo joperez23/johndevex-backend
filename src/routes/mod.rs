@@ -6,7 +6,7 @@
 
 use ntex::web::{self, HttpResponse};
 
-use crate::handlers::{exchange_rate_handler, health_handler};
+use crate::handlers::{exchange_rate_handler, health_handler, trm_cop_handler};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(health_handler::health);
@@ -16,7 +16,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(exchange_rate_handler::latest)
             .service(exchange_rate_handler::latest_by_pair)
             .service(exchange_rate_handler::history)
-            .service(exchange_rate_handler::scrape_now),
+            .service(exchange_rate_handler::scrape_now)
+            .service(trm_cop_handler::sync_colombian_trm),
     );
 }
 
