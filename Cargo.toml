@@ -1,0 +1,63 @@
+[package]
+name = "bcv-rates-api"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Backend en ntex 3.10.1 + PostgreSQL. Incluye scraping de las tasas oficiales USD/EUR del BCV."
+publish = false
+
+[dependencies]
+# --- Framework web -------------------------------------------------------
+ntex = { version = "3.10.1", features = ["tokio", "compress"] }
+ntex-cors = "3.2"
+
+# --- Base de datos (PostgreSQL) -------------------------------------------
+# rustls en vez de openssl: no requiere libssl en el contenedor de producción.
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "tls-rustls-ring-webpki",
+    "postgres",
+    "macros",
+    "migrate",
+    "chrono",
+    "bigdecimal",
+] }
+
+# Tipo numérico exacto para los precios (tal como pediste: BigDecimal)
+bigdecimal = { version = "0.4", features = ["serde"] }
+
+# --- Cliente HTTP + parseo HTML (scraping BCV) ----------------------------
+reqwest = { version = "0.12", features = [
+    "rustls-tls",
+    "gzip",
+    "charset",
+    "http2",
+  "json"
+] }
+scraper = "0.27"
+
+# --- Runtime auxiliar (usado por el scheduler en background) -------------
+tokio = { version = "1", features = ["time"] }
+
+# --- Serialización ---------------------------------------------------------
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# --- Fechas ----------------------------------------------------------------
+chrono = { version = "0.4", features = ["serde"] }
+
+# --- Configuración / entorno -----------------------------------------------
+dotenvy = "0.15"
+
+# --- Logging -----------------------------------------------------------
+log = "0.4"
+env_logger = "0.11"
+
+# --- Errores -----------------------------------------------------------
+thiserror = "2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
