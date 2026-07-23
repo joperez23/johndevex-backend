@@ -44,11 +44,11 @@ impl BcvScraper {
             // Ver nota de módulo: solo afecta a las peticiones hechas con
             // este cliente, que únicamente llama a `url` (el BCV).
             .danger_accept_invalid_certs(insecure_tls)
-            .user_agent(
-                "Mozilla/5.0 (compatible; bcv-rates-api/1.0; +https://ntex.rs) reqwest",
-            )
+            .user_agent("Mozilla/5.0 (compatible; bcv-rates-api/1.0; +https://ntex.rs) reqwest")
             .build()
-            .map_err(|e| AppError::Internal(format!("no se pudo construir el cliente HTTP: {e}")))?;
+            .map_err(|e| {
+                AppError::Internal(format!("no se pudo construir el cliente HTTP: {e}"))
+            })?;
 
         Ok(Self { client, url })
     }
@@ -68,10 +68,9 @@ impl BcvScraper {
             .error_for_status()
             .map_err(|e| AppError::Scraping(format!("el BCV respondió con error HTTP: {e}")))?;
 
-        let body = response
-            .text()
-            .await
-            .map_err(|e| AppError::Scraping(format!("no se pudo leer la respuesta del BCV: {e}")))?;
+        let body = response.text().await.map_err(|e| {
+            AppError::Scraping(format!("no se pudo leer la respuesta del BCV: {e}"))
+        })?;
 
         Self::parse_rates(&body)
     }
@@ -92,8 +91,9 @@ impl BcvScraper {
 /// cambia ligeramente su marcado) que contenga un número parseable.
 fn extract_rate(document: &Html, label: &str, selectors: &[&str]) -> Result<BigDecimal, AppError> {
     for raw_selector in selectors {
-        let selector = Selector::parse(raw_selector)
-            .map_err(|e| AppError::Internal(format!("selector CSS inválido '{raw_selector}': {e:?}")))?;
+        let selector = Selector::parse(raw_selector).map_err(|e| {
+            AppError::Internal(format!("selector CSS inválido '{raw_selector}': {e:?}"))
+        })?;
 
         if let Some(element) = document.select(&selector).next() {
             let text: String = element.text().collect::<Vec<_>>().join("");
