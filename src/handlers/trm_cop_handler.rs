@@ -39,18 +39,6 @@ pub async fn sync_colombian_trm() -> Result<web::HttpResponse, web::Error> {
 
     // Validamos que la API nos haya retornado al menos un registro
     if let Some(latest_trm) = response.first() {
-        let eur = self
-            .repository
-            .insert(Pair::EurVes, &prices.eur, created_at)
-            .await?;
-
-        log::info!(
-            "tasas BCV guardadas -> USD: {} VES, EUR: {} VES ({})",
-            prices.usd,
-            prices.eur,
-            created_at.to_rfc3339()
-        );
-
         Ok(web::HttpResponse::Ok().json(&TrmResponse {
             trm: latest_trm.valor.clone(),
             fecha_vigencia: latest_trm.vigenciadesde.clone(),
