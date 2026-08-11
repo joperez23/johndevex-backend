@@ -25,7 +25,7 @@ Content-Type: application/json
 
 {
     "idIndicador": 1321,
-    "datosIndicador": {}
+    "datosIndicador": {"tipo": "Media"}
 }
 
 ### EURUSD banrep
@@ -45,7 +45,7 @@ Content-Type: application/json
     "fiat": "VES",
     "page": 1,
     "rows": 1,
-    "tradeType": "BUY",
+    "tradeType": "SELL",
     "asset": "USDT",
     "countries": [],
     "proMerchantAds": false,
@@ -64,3 +64,6 @@ Content-Type: application/json
     "followed": false,
     "privilegeDesc": null
 }
+
+### USDTCOP
+GET https://www.binance.com/bapi/asset/v2/public/asset-service/product/get-product-by-symbol?symbol=USDTCOP
