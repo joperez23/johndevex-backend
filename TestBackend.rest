@@ -1,22 +1,23 @@
 ### Escrapear los precios de USD y EUR
-POST http://0.0.0.0:8080/api/v1/exchange-rates/scrape
+POST http://0.0.0.0:8000/api/v1/exchange-rates/scrape
 Content-Type: application/json
 
 ### Precios de dolar en COP 
-GET https://www.datos.gov.co/api/v3/views/32sa-8pi3/query.json?query=SELECT%20valor%20order%20by%20vigenciadesde%20desc%20limit%201
+# GET https://www.datos.gov.co/api/v3/views/32sa-8pi3/query.json?query=SELECT%20valor%20order%20by%20vigenciadesde%20desc%20limit%201
+GET https://www.datos.gov.co/api/v3/views/32sa-8pi3/query.json?query=SELECT valor,vigenciadesde order by vigenciadesde desc limit 1
 Content-Type: application/json
 
 ### Buscar últimos precios
-GET http://0.0.0.0:8080/api/v1/exchange-rates/latest
+GET http://0.0.0.0:8000/api/v1/exchange-rates/latest
 Content-Type: application/json
 
 ### Buscar últimos precios de 1 par
-GET http://0.0.0.0:8080/api/v1/exchange-rates/USDVES/latest
+GET http://0.0.0.0:8000/api/v1/exchange-rates/USDVES/latest
 Content-Type: application/json
 
 
 ### Buscar histórico de precios de 1 par
-GET http://0.0.0.0:8080/api/v1/exchange-rates/USDVES/history?limit=30
+GET http://0.0.0.0:8000/api/v1/exchange-rates/USDVES/history?limit=30
 Content-Type: application/json
 
 ### EURCOP banrep
@@ -25,7 +26,7 @@ Content-Type: application/json
 
 {
     "idIndicador": 1321,
-    "datosIndicador": {"tipo": "Media"}
+    "datosIndicador": {}
 }
 
 ### EURUSD banrep

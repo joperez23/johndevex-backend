@@ -1,63 +1,37 @@
 [package]
-name = "bcv-rates-api"
+name = "backend"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.88"
-description = "Backend en ntex 3.10.1 + PostgreSQL. Incluye scraping de las tasas oficiales USD/EUR del BCV."
-publish = false
+edition = "2024"
 
 [dependencies]
-# --- Framework web -------------------------------------------------------
-ntex = { version = "3.10.1", features = ["tokio", "compress"] }
-ntex-cors = "3.2"
+# Ntex Web Framework v3.12.3
+ntex = { version = "3.12.3", features = ["tokio"] }
+# ntex-server = "=3.10.4"
+# ntex-rt = "=3.16.1"
 
-# --- Base de datos (PostgreSQL) -------------------------------------------
-# rustls en vez de openssl: no requiere libssl en el contenedor de producción.
-sqlx = { version = "0.8", default-features = false, features = [
-    "runtime-tokio",
-    "tls-rustls-ring-webpki",
-    "postgres",
-    "macros",
-    "migrate",
-    "chrono",
-    "bigdecimal",
+# Async runtime & Web Requests
+tokio = { version = "1.38", features = ["full"] }
+reqwest = { version = "0.13.4", features = ["json", "rustls"] }
+scraper = "0.27.0"
+regex = "1.13.1"
+
+# Database & Precision Numeric
+sqlx = { version = "0.9.0", features = [
+  "postgres",
+  "runtime-tokio",
+  "chrono",
+  "bigdecimal",
+  "macros",
 ] }
+bigdecimal = { version = "0.4.10", features = ["serde"] }
 
-# Tipo numérico exacto para los precios (tal como pediste: BigDecimal)
-bigdecimal = { version = "0.4", features = ["serde"] }
+# Serialization & Datetime
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+chrono = { version = "0.4.45", features = ["serde"] }
 
-# --- Cliente HTTP + parseo HTML (scraping BCV) ----------------------------
-reqwest = { version = "0.12", features = [
-    "rustls-tls",
-    "gzip",
-    "charset",
-    "http2",
-  "json"
-] }
-scraper = "0.27"
-
-# --- Runtime auxiliar (usado por el scheduler en background) -------------
-tokio = { version = "1", features = ["time"] }
-
-# --- Serialización ---------------------------------------------------------
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-
-# --- Fechas ----------------------------------------------------------------
-chrono = { version = "0.4", features = ["serde"] }
-
-# --- Configuración / entorno -----------------------------------------------
-dotenvy = "0.15"
-
-# --- Logging -----------------------------------------------------------
-log = "0.4"
-env_logger = "0.11"
-
-# --- Errores -----------------------------------------------------------
-thiserror = "2"
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-strip = true
+# Environment & Errors & Logs
+dotenvy = "0.15.7"
+thiserror = "2.0.20"
+log = "0.4.33"
+env_logger = "0.11.11"
