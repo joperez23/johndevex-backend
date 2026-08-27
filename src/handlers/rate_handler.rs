@@ -65,7 +65,7 @@ pub async fn get_history_handler(
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/api/v1/rates")
+        web::scope("/api/finance")
             .route("/sync/usd-ves", web::post().to(sync_usd_ves_handler))
             .route("/sync/eur-ves", web::post().to(sync_eur_ves_handler))
             .route("/sync/usdt-ves", web::post().to(sync_usdt_ves_handler))

@@ -68,3 +68,10 @@ Content-Type: application/json
 
 ### USDTCOP
 GET https://www.binance.com/bapi/asset/v2/public/asset-service/product/get-product-by-symbol?symbol=USDTCOP
+
+### Envío Whatsapp
+POST http://0.0.0.0:8000/api/whatsapp/send
+Content-Type: application/json
+
+{ "to": "584123778600", "text": "Ya estoy en el CNE" }
+

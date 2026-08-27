@@ -15,14 +15,21 @@ pub enum AppError {
 
     #[error("Resource not found: {0}")]
     NotFound(String),
+
+    #[error("Queue error: {0}")]
+    Queue(String),
+
+    #[error("External API error: {0}")]
+    Api(String),
 }
 
 impl web::error::WebResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match self {
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
-            AppError::Http(_) | AppError::Parse(_) => StatusCode::BAD_GATEWAY,
+            AppError::Http(_) | AppError::Parse(_) | AppError::Api(_) => StatusCode::BAD_GATEWAY,
             AppError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Queue(_) => StatusCode::SERVICE_UNAVAILABLE,
         }
     }
 

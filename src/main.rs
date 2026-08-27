@@ -39,7 +39,17 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to build HTTP client");
 
     let rate_service = RateService::new(pool, http_client);
+
     let app_state = Arc::new(AppState { rate_service });
+
+    // Start the WhatsApp worker eagerly so Chrome opens and the QR code
+    // is shown immediately at boot, rather than on the first API call.
+    // If Chrome is not installed the server still starts (get_or_init_worker
+    // returns None and logs an error, which is handled gracefully).
+    match services::whatsapp_worker::get_or_init_worker() {
+        Some(_) => log::info!("WhatsApp worker started — open the Chrome window and scan the QR code."),
+        None => log::warn!("WhatsApp worker could not start (Chrome not found). /api/whatsapp/send will be unavailable."),
+    }
 
     let bind_addr = format!("{}:{}", config.server_host, config.server_port);
     log::info!("Server listening on http://{}", bind_addr);
@@ -54,9 +64,11 @@ async fn main() -> std::io::Result<()> {
                 .state(app_state)
                 .middleware(web::middleware::Logger::default())
                 .configure(handlers::rate_handler::configure_routes)
+                .configure(handlers::whatsapp_handler::configure_routes)
         }
     })
     .bind(&bind_addr)?
     .run()
     .await
 }
+
