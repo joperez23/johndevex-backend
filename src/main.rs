@@ -42,6 +42,10 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = Arc::new(AppState { rate_service });
 
+    // Start the Email queue worker eagerly
+    services::email_service::get_or_init_email_worker();
+    log::info!("Email background worker initialized (15s dispatch cadence).");
+
     // Start the WhatsApp worker eagerly so Chrome opens and the QR code
     // is shown immediately at boot, rather than on the first API call.
     // If Chrome is not installed the server still starts (get_or_init_worker
@@ -50,6 +54,7 @@ async fn main() -> std::io::Result<()> {
         Some(_) => log::info!("WhatsApp worker started — open the Chrome window and scan the QR code."),
         None => log::warn!("WhatsApp worker could not start (Chrome not found). /api/whatsapp/send will be unavailable."),
     }
+
 
     let bind_addr = format!("{}:{}", config.server_host, config.server_port);
     log::info!("Server listening on http://{}", bind_addr);

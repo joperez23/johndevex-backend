@@ -5,13 +5,12 @@ use tokio::sync::mpsc;
 use urlencoding::encode;
 
 use crate::models::whatsapp::WhatsAppMessage;
-use crate::services::email_service::{send_email, EmailConfig};
+use crate::services::email_service::{EmailJob, enqueue_email};
 
 /// Sends an email alert to joperez@gmail.com when a WhatsApp message fails.
-/// Supports execution inside both an active Tokio runtime or a synchronous OS thread.
+/// Enqueues the notification into the background email queue.
 pub fn notify_failure_by_email(recipient: &str, whatsapp_text: &str, error_detail: &str) {
-    let config = EmailConfig::from_env();
-    let to = "joperez@gmail.com".to_string();
+    let to = "joperezd23@gmail.com".to_string();
     let subject = format!("⚠️ WhatsApp send failed → {}", recipient);
     let body = format!(
         "A WhatsApp message could not be delivered.\n\n\
@@ -23,28 +22,16 @@ pub fn notify_failure_by_email(recipient: &str, whatsapp_text: &str, error_detai
         recipient, error_detail, whatsapp_text
     );
 
-    if let Ok(handle) = tokio::runtime::Handle::try_current() {
-        handle.spawn(async move {
-            if let Err(e) = send_email(&config, &to, &subject, &body).await {
-                log::error!("Failed to send WhatsApp-failure email: {}", e);
-            } else {
-                log::info!("Failure-notification email sent to {}", to);
-            }
-        });
+    let job = EmailJob {
+        to: to.clone(),
+        subject,
+        body,
+    };
+
+    if let Err(e) = enqueue_email(job) {
+        log::error!("Failed to enqueue WhatsApp-failure email: {}", e);
     } else {
-        match tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-        {
-            Ok(rt) => {
-                if let Err(e) = rt.block_on(send_email(&config, &to, &subject, &body)) {
-                    log::error!("Failed to send WhatsApp-failure email: {}", e);
-                } else {
-                    log::info!("Failure-notification email sent to {}", to);
-                }
-            }
-            Err(e) => log::error!("Could not build Tokio runtime for email: {}", e),
-        }
+        log::info!("WhatsApp-failure notification email queued for {}", to);
     }
 }
 
@@ -403,10 +390,7 @@ pub fn get_or_init_worker() -> Option<mpsc::Sender<WhatsAppMessage>> {
                             "Could not open a new tab (browser may have crashed): {:?}",
                             e2
                         );
-                        log::error!(
-                            "{}. Worker is shutting down — restart the server.",
-                            err_str
-                        );
+                        log::error!("{}. Worker is shutting down — restart the server.", err_str);
                         notify_failure_by_email(&msg.to, &msg.text, &err_str);
                         break;
                     }

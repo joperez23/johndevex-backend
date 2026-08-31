@@ -73,7 +73,7 @@ GET https://www.binance.com/bapi/asset/v2/public/asset-service/product/get-produ
 POST http://0.0.0.0:8000/api/whatsapp/send
 Content-Type: application/json
 
-{ "to": "584123778600", "text": "EPA!" }
+{ "to": "584123778600", "text": "test text" }
 
 ### Envío de correo
 POST http://0.0.0.0:8000/api/email/send
@@ -81,7 +81,29 @@ Content-Type: application/json
 
 {
   "to": "joperez23@gmail.com",
-  "subject": "Prueba Gmail",
+  "subject": "Prueba Gmail 4",
   "body": "Este es un mensaje de prueba enviado desde el backend en Rust vía Gmail SMTP."
 }
 
+### Encolar lista de correos (despacho cada 15 segundos)
+
+POST http://0.0.0.0:8000/api/email/send-batch
+Content-Type: application/json
+
+{
+      "emails": [
+        {
+          "to": "joperez23@gmail.com",
+          "subject": "Aviso 1",
+          "body": "Primer correo"
+        },
+        {
+          "to": "joperez23@gmail.com",
+          "subject": "Aviso 2",
+          "body": "Segundo correo (15s después)"
+        }
+      ]
+ }
+
+  ### Consultar estado de la cola
+  GET http://0.0.0.0:8000/api/email/queue-status
