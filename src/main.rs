@@ -65,6 +65,7 @@ async fn main() -> std::io::Result<()> {
                 .middleware(web::middleware::Logger::default())
                 .configure(handlers::rate_handler::configure_routes)
                 .configure(handlers::whatsapp_handler::configure_routes)
+                .configure(handlers::email_handler::configure_routes)
         }
     })
     .bind(&bind_addr)?

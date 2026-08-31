@@ -14,16 +14,32 @@ pub async fn send_whatsapp_message(
     let to = payload.to.clone();
 
     // Get (or lazily create) the WhatsApp worker channel.
-    let tx = get_or_init_worker().ok_or_else(|| {
-        AppError::Queue(
-            "WhatsApp worker could not start: Chrome/Chromium binary not found.".to_string(),
-        )
-    })?;
+    let tx = match get_or_init_worker() {
+        Some(tx) => tx,
+        None => {
+            let err_msg =
+                "WhatsApp worker could not start: Chrome/Chromium binary not found.".to_string();
+            crate::services::whatsapp_worker::notify_failure_by_email(
+                &to,
+                &payload.text,
+                &err_msg,
+            );
+            return Err(AppError::Queue(err_msg));
+        }
+    };
 
     // Try to send to the channel (non-blocking).
-    tx.try_send(payload).map_err(|_| {
-        AppError::Queue("WhatsApp message queue is full. Try again later.".to_string())
-    })?;
+    if let Err(e) = tx.try_send(payload.clone()) {
+        let err_msg = format!("WhatsApp message queue is full or rejected: {}", e);
+        crate::services::whatsapp_worker::notify_failure_by_email(
+            &to,
+            &payload.text,
+            &err_msg,
+        );
+        return Err(AppError::Queue(
+            "WhatsApp message queue is full. Try again later.".to_string(),
+        ));
+    }
 
     Ok(web::HttpResponse::Ok().json(&serde_json::json!({
         "status": "queued",

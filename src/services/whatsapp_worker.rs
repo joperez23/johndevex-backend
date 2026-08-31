@@ -5,6 +5,48 @@ use tokio::sync::mpsc;
 use urlencoding::encode;
 
 use crate::models::whatsapp::WhatsAppMessage;
+use crate::services::email_service::{send_email, EmailConfig};
+
+/// Sends an email alert to joperez@gmail.com when a WhatsApp message fails.
+/// Supports execution inside both an active Tokio runtime or a synchronous OS thread.
+pub fn notify_failure_by_email(recipient: &str, whatsapp_text: &str, error_detail: &str) {
+    let config = EmailConfig::from_env();
+    let to = "joperez@gmail.com".to_string();
+    let subject = format!("⚠️ WhatsApp send failed → {}", recipient);
+    let body = format!(
+        "A WhatsApp message could not be delivered.\n\n\
+         Recipient  : {}\n\
+         Error      : {}\n\n\
+         Original message\n\
+         ─────────────────\n\
+         {}\n",
+        recipient, error_detail, whatsapp_text
+    );
+
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        handle.spawn(async move {
+            if let Err(e) = send_email(&config, &to, &subject, &body).await {
+                log::error!("Failed to send WhatsApp-failure email: {}", e);
+            } else {
+                log::info!("Failure-notification email sent to {}", to);
+            }
+        });
+    } else {
+        match tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        {
+            Ok(rt) => {
+                if let Err(e) = rt.block_on(send_email(&config, &to, &subject, &body)) {
+                    log::error!("Failed to send WhatsApp-failure email: {}", e);
+                } else {
+                    log::info!("Failure-notification email sent to {}", to);
+                }
+            }
+            Err(e) => log::error!("Could not build Tokio runtime for email: {}", e),
+        }
+    }
+}
 
 /// Resolves the Chrome/Chromium executable path.
 /// Priority order:
@@ -345,21 +387,27 @@ pub fn get_or_init_worker() -> Option<mpsc::Sender<WhatsAppMessage>> {
                         tab = new_tab;
                         log::info!("New tab opened. Retrying navigation…");
                         if let Err(e2) = tab.navigate_to(&url) {
+                            let err_str = format!("{:?}", e2);
                             log::error!(
-                                "Retry navigation also failed for {}: {:?}. Skipping message.",
+                                "Retry navigation also failed for {}: {}. Skipping message.",
                                 msg.to,
-                                e2
+                                err_str
                             );
+                            notify_failure_by_email(&msg.to, &msg.text, &err_str);
                             keep_alive_sleep(&tab, 30);
                             continue;
                         }
                     }
                     Err(e2) => {
-                        log::error!(
-                            "Could not open a new tab (browser may have crashed): {:?}. \
-                             Worker is shutting down — restart the server.",
+                        let err_str = format!(
+                            "Could not open a new tab (browser may have crashed): {:?}",
                             e2
                         );
+                        log::error!(
+                            "{}. Worker is shutting down — restart the server.",
+                            err_str
+                        );
+                        notify_failure_by_email(&msg.to, &msg.text, &err_str);
                         break;
                     }
                 }
@@ -439,11 +487,15 @@ pub fn get_or_init_worker() -> Option<mpsc::Sender<WhatsAppMessage>> {
                 }
             }
             if !sent {
+                let err_str = "Send button not found after trying all selectors. \
+                    The number may be invalid or WhatsApp Web changed its UI."
+                    .to_string();
                 log::error!(
                     "Send button not found for {} after trying all selectors. \
                      The number may be invalid or WhatsApp Web changed its UI.",
                     msg.to
                 );
+                notify_failure_by_email(&msg.to, &msg.text, &err_str);
             }
 
             // ─── Rate-limit delay ───────────────────────────────────────────
