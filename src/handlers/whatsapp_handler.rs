@@ -19,11 +19,7 @@ pub async fn send_whatsapp_message(
         None => {
             let err_msg =
                 "WhatsApp worker could not start: Chrome/Chromium binary not found.".to_string();
-            crate::services::whatsapp_worker::notify_failure_by_email(
-                &to,
-                &payload.text,
-                &err_msg,
-            );
+            crate::services::whatsapp_worker::notify_failure_by_email(&to, &payload.text, &err_msg);
             return Err(AppError::Queue(err_msg));
         }
     };
@@ -31,11 +27,7 @@ pub async fn send_whatsapp_message(
     // Try to send to the channel (non-blocking).
     if let Err(e) = tx.try_send(payload.clone()) {
         let err_msg = format!("WhatsApp message queue is full or rejected: {}", e);
-        crate::services::whatsapp_worker::notify_failure_by_email(
-            &to,
-            &payload.text,
-            &err_msg,
-        );
+        crate::services::whatsapp_worker::notify_failure_by_email(&to, &payload.text, &err_msg);
         return Err(AppError::Queue(
             "WhatsApp message queue is full. Try again later.".to_string(),
         ));
@@ -49,9 +41,7 @@ pub async fn send_whatsapp_message(
 
 /// Serves the latest QR code screenshot captured by the headless Chrome worker.
 /// Refresh this URL every few seconds until you see a valid QR code, then scan it.
-pub async fn get_qr_screenshot(
-    _state: web::types::State<Arc<AppState>>,
-) -> web::HttpResponse {
+pub async fn get_qr_screenshot(_state: web::types::State<Arc<AppState>>) -> web::HttpResponse {
     let qr_path = std::env::current_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
         .join("whatsapp_qr.png");
@@ -73,7 +63,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/whatsapp")
             .route("/send", web::post().to(send_whatsapp_message))
-            .route("/qr", web::get().to(get_qr_screenshot))
+            .route("/qr", web::get().to(get_qr_screenshot)),
     );
 }
-
